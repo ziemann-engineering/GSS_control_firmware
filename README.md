@@ -53,7 +53,7 @@ After connecting over USB CDC and opening a terminal:
 - `measure_supply`
   - Print measured gate supplies (`POS:+xx.xx NEG:yy.yy`).
 - `measure_DUT <0-8>`
-  - Legacy command name for DUT relay selection (`0` deselects all).
+  - Legacy command name kept for host-script compatibility; it selects DUT relays (`0` deselects all).
 - `ID`
   - Print board serial + firmware version (`GSS,SN:XX,VER:x.y`).
 - `status`
