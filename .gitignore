@@ -1,0 +1,6 @@
+/build/
+/.dep/
+.pack
+.vscode/
+*settings.json
+.vscode/settings.json
