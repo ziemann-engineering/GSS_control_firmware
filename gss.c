@@ -370,8 +370,8 @@ void cmd_measure_DUT(BaseSequentialStream *chp, int argc, char *argv[]) {
 /*
  * ID - read the 8 board identification pins and return hex serial number.
  *
- * Response format matches gss_controller.py probe_port():
- *   "GSS,SN:XX\r\n"
+ * Response format:
+ *   "Ziemann Engineering,GSS Control Board,XX,0.1 / <build date>\r\n"
  *
  * TBD: GSS_ID_PORT and GSS_ID_MASK must be set in gss.h when the PCB pin
  *      assignment is finalised.  The 8 ID lines are expected on consecutive
@@ -391,7 +391,8 @@ void cmd_ID(BaseSequentialStream *chp, int argc, char *argv[]) {
     }
     uint8_t sn = (uint8_t)((port_val >> shift) & 0xFFU);
 
-    chprintf(chp, "GSS,SN:%02X,VER:%s\r\n", sn, GSS_FW_VERSION);
+    chprintf(chp, "Ziemann Engineering,GSS Control Board,%02X,%s / %s\r\n",
+             sn, GSS_FW_VERSION_STR, GSS_FW_BUILD_DATE);
 }
 
 /* -------------------------------------------------------------------------

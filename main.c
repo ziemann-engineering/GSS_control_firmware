@@ -7,7 +7,7 @@
  *   GSS_cycles                           - query total cycle count so far
  *   measure_supply                       - read gate supply voltages
  *   measure_DUT  <0-8>                   - select DUT (0=none)
- *   ID                                   - read 8-bit board serial number and firmware version
+ *   ID / *IDN?                           - returns \"Ziemann Engineering,GSS Control Board,SN,version / date\"
  *   status                               - print running state
  *   stop                                 - abort test (between batches only)
  *   dfu                                  - reboot into USB DFU bootloader
@@ -74,6 +74,7 @@ static const ShellCommand commands[] = {
     {"measure_supply", cmd_measure_supply},
     {"measure_DUT",    cmd_measure_DUT},
     {"ID",             cmd_ID},
+    {"*IDN?",          cmd_ID},
     {"status",         cmd_status},
     {"stop",           cmd_stop},
     {"dfu",            cmd_dfu},

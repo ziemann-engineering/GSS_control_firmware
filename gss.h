@@ -36,7 +36,8 @@
  * Hardware constants (update when PCB pin assignment is finalised)
  * -------------------------------------------------------------------------*/
 
-#define GSS_FW_VERSION          "0.1"  /* increment on every firmware release */
+#define GSS_FW_VERSION_STR      "0.1"   /* increment on every firmware release */
+#define GSS_FW_BUILD_DATE        __DATE__
 
 /* HRTIM clock: HSE 20 MHz → PLL → 125 MHz SYSCLK.
  * APB2 prescaler = /2 → PCLK2 = 62.5 MHz → APB2 timer clock = 125 MHz.
