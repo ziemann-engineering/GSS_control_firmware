@@ -244,6 +244,10 @@ static THD_FUNCTION(GSS_test_thread, arg) {
         GSS_test_running_flag = true;
         GSS_cycle_count      += cycles;   /* accumulate across batches */
 
+        /* Enable gate driver: pull GD_DIS low (open-drain, hardware pullup released) */
+        palClearLine(LINE_GD_DIS);
+        chThdSleepMicroseconds(10);  /* allow gate driver to settle before switching */
+
         /* Configure and start HRTIM */
         GSS_hrtim_configure(freq_hz, duty);
 
@@ -255,6 +259,8 @@ static THD_FUNCTION(GSS_test_thread, arg) {
         chSysUnlock();
 
         GSS_hrtim_stop();
+        /* Disable gate driver: release open-drain, hardware pullup drives GD_DIS high */
+        palSetLine(LINE_GD_DIS);
         GSS_test_running_flag = false;
 
         /* Wake cmd_GSS_test so it can return to the shell */
@@ -277,6 +283,7 @@ static THD_FUNCTION(GSS_test_thread, arg) {
  * measure_DUT, measure_supply, etc.
  */
 void cmd_GSS_test(BaseSequentialStream *chp, int argc, char *argv[]) {
+    led_cmd_flag = true;
     if (argc != 3) {
         chprintf(chp, "Usage: GSS_test <cycles> <freq_hz> <duty>\r\n");
         return;
@@ -312,6 +319,7 @@ void cmd_GSS_test(BaseSequentialStream *chp, int argc, char *argv[]) {
  */
 void cmd_GSS_cycles(BaseSequentialStream *chp, int argc, char *argv[]) {
     (void)argc; (void)argv;
+    led_cmd_flag = true;
     chprintf(chp, "CYCLES %lu\r\n", (unsigned long)GSS_cycle_count);
 }
 
@@ -325,6 +333,7 @@ void cmd_GSS_cycles(BaseSequentialStream *chp, int argc, char *argv[]) {
  */
 void cmd_measure_supply(BaseSequentialStream *chp, int argc, char *argv[]) {
     (void)argc; (void)argv;
+    led_cmd_flag = true;
 
     uint16_t raw_pos = GSS_adc_read_channel(ADC_CH_VPOS);
     uint16_t raw_neg = GSS_adc_read_channel(ADC_CH_VNEG);
@@ -344,6 +353,7 @@ void cmd_measure_supply(BaseSequentialStream *chp, int argc, char *argv[]) {
  *      a one-hot pattern on consecutive port bits defined by GSS_DUT_SEL_MASK.
  */
 void cmd_measure_DUT(BaseSequentialStream *chp, int argc, char *argv[]) {
+    led_cmd_flag = true;
     if (argc != 1) {
         chprintf(chp, "Usage: measure_DUT <0-8>\r\n");
         return;
@@ -379,6 +389,7 @@ void cmd_measure_DUT(BaseSequentialStream *chp, int argc, char *argv[]) {
  */
 void cmd_ID(BaseSequentialStream *chp, int argc, char *argv[]) {
     (void)argc; (void)argv;
+    led_cmd_flag = true;
 
     /* Read the port and extract the 8 ID bits */
     uint32_t port_val = GSS_ID_PORT->IDR;
@@ -416,6 +427,11 @@ void GSS_init(void) {
     /* ID input pins: PB0-PB7 — pull-down, read serial number */
     palSetGroupMode(GSS_ID_PORT, GSS_ID_MASK, 0U,
                     PAL_MODE_INPUT_PULLDOWN);
+
+    /* GD_DIS (PB11): open-drain output, high at startup — gate driver disabled.
+     * Board.h sets ODR=HIGH; reinforce here before any switching is possible. */
+    palSetLineMode(LINE_GD_DIS, PAL_MODE_OUTPUT_OPENDRAIN);
+    palSetLine(LINE_GD_DIS);
 
     /* Start the background test thread (blocks on mailbox until a test starts) */
     chThdCreateStatic(waGSStest, sizeof(waGSStest), NORMALPRIO,

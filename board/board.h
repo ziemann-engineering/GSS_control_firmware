@@ -60,9 +60,9 @@
  *
  * GPIOA:
  *   PA0-PA7 - RLC1..RLC8 (output push-pull)  Relay control for DUT selection
- *   PA8     - unused      (analog)
- *   PA9     - AIN1        (analog)             Gate supply +V measurement
- *   PA10    - AIN2        (analog)             Gate supply -V measurement
+ *   PA8     - AIN1        (analog)             Gate supply +V measurement (ADC5_IN1)
+ *   PA9     - AIN2        (analog)             Gate supply -V measurement (ADC5_IN2)
+ *   PA10    - unused      (analog)
  *   PA11    - USB_DM      (AF10)               USB D-
  *   PA12    - USB_DP      (AF10)               USB D+
  *   PA13    - SWDIO       (AF0, pull-up)        SWD data
@@ -77,9 +77,9 @@
 #define GPIOA_RLC6                  5U
 #define GPIOA_RLC7                  6U
 #define GPIOA_RLC8                  7U
-#define GPIOA_PIN8                  8U
-#define GPIOA_AIN1                  9U
-#define GPIOA_AIN2                  10U
+#define GPIOA_AIN1                  8U
+#define GPIOA_AIN2                  9U
+#define GPIOA_PIN10                 10U
 #define GPIOA_USB_DM                11U
 #define GPIOA_USB_DP                12U
 #define GPIOA_SWDIO                 13U
@@ -90,7 +90,8 @@
  * GPIOB:
  *   PB0-PB7  - ID0..ID7   (input, pull-down)  Board serial number
  *   PB8      - BOOT0      (analog)
- *   PB9-PB11 - unused     (analog)
+ *   PB9-PB10 - unused     (analog)
+ *   PB11    - GD_DIS      (output open-drain)  Gate driver disable, hardware pullup; low during switching
  *   PB12    - CHC1        (AF13)               HRTIM Timer C output 1 (PWM1)
  *   PB13    - CHC2        (AF13)               HRTIM Timer C output 2 (PWM2)
  *   PB14    - CHD1        (AF13)               HRTIM Timer D output 1 (PWM3)
@@ -108,7 +109,7 @@
 #define GPIOB_BOOT0_CTRL            8U   /* PB8 drives BOOT0 via capacitor C_BOOT */
 #define GPIOB_PIN9                  9U
 #define GPIOB_PIN10                 10U
-#define GPIOB_PIN11                 11U
+#define GPIOB_GD_DIS                11U
 #define GPIOB_HRTIM_CHC1            12U
 #define GPIOB_HRTIM_CHC2            13U
 #define GPIOB_HRTIM_CHD1            14U
@@ -225,11 +226,14 @@
 /*
  * IO lines assignments.
  */
+#define LINE_AIN1                   PAL_LINE(GPIOA,  8U)
+#define LINE_AIN2                   PAL_LINE(GPIOA,  9U)
 #define LINE_USB_DM                 PAL_LINE(GPIOA, 11U)
 #define LINE_USB_DP                 PAL_LINE(GPIOA, 12U)
 #define LINE_SWDIO                  PAL_LINE(GPIOA, 13U)
 #define LINE_SWCLK                  PAL_LINE(GPIOA, 14U)
 #define LINE_SWO                    PAL_LINE(GPIOB,  3U)
+#define LINE_GD_DIS                 PAL_LINE(GPIOB, 11U)
 
 /*===========================================================================*/
 /* Driver pre-compile time settings.                                         */
@@ -286,9 +290,9 @@
 /*
  * GPIOA setup:
  *   PA0-PA7  output PP (RLC relay control, DUT select)
- *   PA8      analog (unused)
- *   PA9      analog (AIN1 supply measurement)
- *   PA10     analog (AIN2 supply measurement)
+ *   PA8      analog (AIN1 supply measurement, ADC5_IN1)
+ *   PA9      analog (AIN2 supply measurement, ADC5_IN2)
+ *   PA10     analog (unused)
  *   PA11     AF10 PP very-high (USB_DM)
  *   PA12     AF10 PP very-high (USB_DP)
  *   PA13     AF0  PP very-high pull-up (SWDIO)
@@ -303,9 +307,9 @@
                                      PIN_MODE_OUTPUT(GPIOA_RLC6) |          \
                                      PIN_MODE_OUTPUT(GPIOA_RLC7) |          \
                                      PIN_MODE_OUTPUT(GPIOA_RLC8) |          \
-                                     PIN_MODE_ANALOG(GPIOA_PIN8) |          \
                                      PIN_MODE_ANALOG(GPIOA_AIN1) |          \
                                      PIN_MODE_ANALOG(GPIOA_AIN2) |          \
+                                     PIN_MODE_ANALOG(GPIOA_PIN10) |         \
                                      PIN_MODE_ALTERNATE(GPIOA_USB_DM) |     \
                                      PIN_MODE_ALTERNATE(GPIOA_USB_DP) |     \
                                      PIN_MODE_ALTERNATE(GPIOA_SWDIO) |      \
@@ -319,9 +323,9 @@
                                      PIN_OTYPE_PUSHPULL(GPIOA_RLC6) |       \
                                      PIN_OTYPE_PUSHPULL(GPIOA_RLC7) |       \
                                      PIN_OTYPE_PUSHPULL(GPIOA_RLC8) |       \
-                                     PIN_OTYPE_PUSHPULL(GPIOA_PIN8) |       \
                                      PIN_OTYPE_PUSHPULL(GPIOA_AIN1) |       \
                                      PIN_OTYPE_PUSHPULL(GPIOA_AIN2) |       \
+                                     PIN_OTYPE_PUSHPULL(GPIOA_PIN10) |      \
                                      PIN_OTYPE_PUSHPULL(GPIOA_USB_DM) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOA_USB_DP) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOA_SWDIO) |      \
@@ -335,9 +339,9 @@
                                      PIN_OSPEED_MEDIUM(GPIOA_RLC6) |        \
                                      PIN_OSPEED_MEDIUM(GPIOA_RLC7) |        \
                                      PIN_OSPEED_MEDIUM(GPIOA_RLC8) |        \
-                                     PIN_OSPEED_VERYLOW(GPIOA_PIN8) |       \
                                      PIN_OSPEED_VERYLOW(GPIOA_AIN1) |       \
                                      PIN_OSPEED_VERYLOW(GPIOA_AIN2) |       \
+                                     PIN_OSPEED_VERYLOW(GPIOA_PIN10) |      \
                                      PIN_OSPEED_HIGH(GPIOA_USB_DM) |        \
                                      PIN_OSPEED_HIGH(GPIOA_USB_DP) |        \
                                      PIN_OSPEED_HIGH(GPIOA_SWDIO) |         \
@@ -351,9 +355,9 @@
                                      PIN_PUPDR_FLOATING(GPIOA_RLC6) |       \
                                      PIN_PUPDR_FLOATING(GPIOA_RLC7) |       \
                                      PIN_PUPDR_FLOATING(GPIOA_RLC8) |       \
-                                     PIN_PUPDR_FLOATING(GPIOA_PIN8) |       \
                                      PIN_PUPDR_FLOATING(GPIOA_AIN1) |       \
                                      PIN_PUPDR_FLOATING(GPIOA_AIN2) |       \
+                                     PIN_PUPDR_FLOATING(GPIOA_PIN10) |      \
                                      PIN_PUPDR_FLOATING(GPIOA_USB_DM) |     \
                                      PIN_PUPDR_FLOATING(GPIOA_USB_DP) |     \
                                      PIN_PUPDR_PULLUP(GPIOA_SWDIO) |        \
@@ -367,9 +371,9 @@
                                      PIN_ODR_LOW(GPIOA_RLC6) |              \
                                      PIN_ODR_LOW(GPIOA_RLC7) |              \
                                      PIN_ODR_LOW(GPIOA_RLC8) |              \
-                                     PIN_ODR_LOW(GPIOA_PIN8) |              \
                                      PIN_ODR_LOW(GPIOA_AIN1) |              \
                                      PIN_ODR_LOW(GPIOA_AIN2) |              \
+                                     PIN_ODR_LOW(GPIOA_PIN10) |             \
                                      PIN_ODR_LOW(GPIOA_USB_DM) |            \
                                      PIN_ODR_LOW(GPIOA_USB_DP) |            \
                                      PIN_ODR_HIGH(GPIOA_SWDIO) |            \
@@ -383,9 +387,9 @@
                                      PIN_AFIO_AF(GPIOA_RLC6,  0U) |         \
                                      PIN_AFIO_AF(GPIOA_RLC7,  0U) |         \
                                      PIN_AFIO_AF(GPIOA_RLC8,  0U))
-#define VAL_GPIOA_AFRH              (PIN_AFIO_AF(GPIOA_PIN8,   0U) |        \
-                                     PIN_AFIO_AF(GPIOA_AIN1,   0U) |        \
+#define VAL_GPIOA_AFRH              (PIN_AFIO_AF(GPIOA_AIN1,   0U) |        \
                                      PIN_AFIO_AF(GPIOA_AIN2,   0U) |        \
+                                     PIN_AFIO_AF(GPIOA_PIN10,  0U) |        \
                                      PIN_AFIO_AF(GPIOA_USB_DM, 10U) |       \
                                      PIN_AFIO_AF(GPIOA_USB_DP, 10U) |       \
                                      PIN_AFIO_AF(GPIOA_SWDIO,  0U) |        \
@@ -395,7 +399,8 @@
 /*
  * GPIOB setup:
  *   PB0-PB7  input pull-down (ID0..ID7 board serial number)
- *   PB8-PB11 analog (unused)
+ *   PB8-PB10 analog (unused)
+ *   PB11     output OD floating (GD_DIS, hardware pullup; high=hi-Z/enabled, low=disabled)
  *   PB12     AF13 PP very-high (HRTIM CHC1)
  *   PB13     AF13 PP very-high (HRTIM CHC2)
  *   PB14     AF13 PP very-high (HRTIM CHD1)
@@ -412,7 +417,7 @@
                                      PIN_MODE_ANALOG(GPIOB_PIN8) |          \
                                      PIN_MODE_ANALOG(GPIOB_PIN9) |          \
                                      PIN_MODE_ANALOG(GPIOB_PIN10) |         \
-                                     PIN_MODE_ANALOG(GPIOB_PIN11) |         \
+                                     PIN_MODE_OUTPUT(GPIOB_GD_DIS) |        \
                                      PIN_MODE_ALTERNATE(GPIOB_HRTIM_CHC1) | \
                                      PIN_MODE_ALTERNATE(GPIOB_HRTIM_CHC2) | \
                                      PIN_MODE_ALTERNATE(GPIOB_HRTIM_CHD1) | \
@@ -428,7 +433,7 @@
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN8) |       \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN9) |       \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN10) |      \
-                                     PIN_OTYPE_PUSHPULL(GPIOB_PIN11) |      \
+                                     PIN_OTYPE_OPENDRAIN(GPIOB_GD_DIS) |    \
                                      PIN_OTYPE_PUSHPULL(GPIOB_HRTIM_CHC1) | \
                                      PIN_OTYPE_PUSHPULL(GPIOB_HRTIM_CHC2) | \
                                      PIN_OTYPE_PUSHPULL(GPIOB_HRTIM_CHD1) | \
@@ -444,7 +449,7 @@
                                      PIN_OSPEED_VERYLOW(GPIOB_PIN8) |       \
                                      PIN_OSPEED_VERYLOW(GPIOB_PIN9) |       \
                                      PIN_OSPEED_VERYLOW(GPIOB_PIN10) |      \
-                                     PIN_OSPEED_VERYLOW(GPIOB_PIN11) |      \
+                                     PIN_OSPEED_VERYLOW(GPIOB_GD_DIS) |     \
                                      PIN_OSPEED_HIGH(GPIOB_HRTIM_CHC1) |    \
                                      PIN_OSPEED_HIGH(GPIOB_HRTIM_CHC2) |    \
                                      PIN_OSPEED_HIGH(GPIOB_HRTIM_CHD1) |    \
@@ -460,7 +465,7 @@
                                      PIN_PUPDR_FLOATING(GPIOB_PIN8) |       \
                                      PIN_PUPDR_FLOATING(GPIOB_PIN9) |       \
                                      PIN_PUPDR_FLOATING(GPIOB_PIN10) |      \
-                                     PIN_PUPDR_FLOATING(GPIOB_PIN11) |      \
+                                     PIN_PUPDR_FLOATING(GPIOB_GD_DIS) |     \
                                      PIN_PUPDR_FLOATING(GPIOB_HRTIM_CHC1) | \
                                      PIN_PUPDR_FLOATING(GPIOB_HRTIM_CHC2) | \
                                      PIN_PUPDR_FLOATING(GPIOB_HRTIM_CHD1) | \
@@ -476,7 +481,7 @@
                                      PIN_ODR_LOW(GPIOB_PIN8) |              \
                                      PIN_ODR_LOW(GPIOB_PIN9) |              \
                                      PIN_ODR_LOW(GPIOB_PIN10) |             \
-                                     PIN_ODR_LOW(GPIOB_PIN11) |             \
+                                     PIN_ODR_HIGH(GPIOB_GD_DIS) |           \
                                      PIN_ODR_LOW(GPIOB_HRTIM_CHC1) |        \
                                      PIN_ODR_LOW(GPIOB_HRTIM_CHC2) |        \
                                      PIN_ODR_LOW(GPIOB_HRTIM_CHD1) |        \
@@ -492,7 +497,7 @@
 #define VAL_GPIOB_AFRH              (PIN_AFIO_AF(GPIOB_PIN8,         0U) |  \
                                      PIN_AFIO_AF(GPIOB_PIN9,         0U) |  \
                                      PIN_AFIO_AF(GPIOB_PIN10,        0U) |  \
-                                     PIN_AFIO_AF(GPIOB_PIN11,        0U) |  \
+                                     PIN_AFIO_AF(GPIOB_GD_DIS,       0U) |  \
                                      PIN_AFIO_AF(GPIOB_HRTIM_CHC1,  13U) | \
                                      PIN_AFIO_AF(GPIOB_HRTIM_CHC2,  13U) | \
                                      PIN_AFIO_AF(GPIOB_HRTIM_CHD1,  13U) | \

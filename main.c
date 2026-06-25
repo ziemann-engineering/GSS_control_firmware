@@ -24,6 +24,8 @@
 BaseSequentialStream *chp_USB = (BaseSequentialStream *)&SDU1;
 
 volatile bool clear_to_run_flag = false;
+volatile bool GSS_error_flag   = false;
+volatile bool led_cmd_flag     = false;
 
 // ############################
 // ## Built-in shell commands ##
@@ -31,6 +33,7 @@ volatile bool clear_to_run_flag = false;
 
 static void cmd_status(BaseSequentialStream *chp, int argc, char *argv[]) {
     (void)argc; (void)argv;
+    led_cmd_flag = true;
     if (GSS_test_running_flag)
         chprintf(chp, "Test running: GSS\r\n");
     else
@@ -39,12 +42,14 @@ static void cmd_status(BaseSequentialStream *chp, int argc, char *argv[]) {
 
 static void cmd_stop(BaseSequentialStream *chp, int argc, char *argv[]) {
     (void)argc; (void)argv;
+    led_cmd_flag = true;
     stop_test();
     chprintf(chp, "OK\r\n");
 }
 
 static void cmd_dfu(BaseSequentialStream *chp, int argc, char *argv[]) {
     (void)argc; (void)argv;
+    led_cmd_flag = true;
     chprintf(chp, "Entering DFU bootloader...\r\n");
     chThdSleepMilliseconds(100);   /* allow USB to flush response */
 
@@ -59,6 +64,7 @@ static void cmd_dfu(BaseSequentialStream *chp, int argc, char *argv[]) {
 
 static void cmd_reset(BaseSequentialStream *chp, int argc, char *argv[]) {
     (void)argc; (void)argv;
+    led_cmd_flag = true;
     chprintf(chp, "Resetting...\r\n");
     chThdSleepMilliseconds(50);
     NVIC_SystemReset();
@@ -104,6 +110,9 @@ void stop_test(void) {
 
     GSS_test_running_flag = false;
 
+    /* Release GD_DIS: open-drain released, hardware pullup disables gate driver */
+    palSetLine(LINE_GD_DIS);
+
     /* Wake up any waiting test thread so it can exit cleanly */
     chSysLock();
     if (GSS_test_thread_p != NULL) {
@@ -116,15 +125,39 @@ void stop_test(void) {
 // ##  LED blink thread              ##
 // ####################################
 
-static THD_WORKING_AREA(waLED, 128);
+static THD_WORKING_AREA(waLED, 256);
 static THD_FUNCTION(LED_thread, arg) {
     (void)arg;
     chRegSetThreadName("LED");
+
+    systime_t next_heartbeat = chVTGetSystemTime();
+
     while (true) {
-        /* Blink green LED: slow = idle, fast = test running */
-        systime_t delay = GSS_test_running_flag ? TIME_MS2I(100) : TIME_MS2I(500);
-        chThdSleep(delay);
-        palTogglePad(GPIOC, GPIOC_LED_GREEN);
+        chThdSleepMilliseconds(50);
+
+        /* Red/Green: reflect GD state (mutually exclusive, steady) */
+        if (GSS_test_running_flag) {
+            palSetPad(GPIOC, GPIOC_LED_RED);
+            palClearPad(GPIOC, GPIOC_LED_GREEN);
+        } else {
+            palClearPad(GPIOC, GPIOC_LED_RED);
+            palSetPad(GPIOC, GPIOC_LED_GREEN);
+        }
+
+        /* Yellow: error indicator — latched until reset */
+        if (GSS_error_flag) {
+            palSetPad(GPIOC, GPIOC_LED_YELLOW);
+        }
+
+        /* Blue: 50 ms pulse every second (heartbeat), also fires on any command */
+        if (led_cmd_flag ||
+            chVTTimeElapsedSinceX(next_heartbeat) >= TIME_MS2I(1000)) {
+            palSetPad(GPIOC, GPIOC_LED_BLUE);
+            chThdSleepMilliseconds(led_cmd_flag ? 500 : 50);
+            palClearPad(GPIOC, GPIOC_LED_BLUE);
+            led_cmd_flag   = false;
+            next_heartbeat = chVTGetSystemTime();
+        }
     }
 }
 
@@ -148,6 +181,17 @@ int main(void) {
 
     /* Shell subsystem */
     shellInit();
+
+    /* Startup LED test: all four LEDs on for 300 ms */
+    palSetPad(GPIOC, GPIOC_LED_RED);
+    palSetPad(GPIOC, GPIOC_LED_GREEN);
+    palSetPad(GPIOC, GPIOC_LED_BLUE);
+    palSetPad(GPIOC, GPIOC_LED_YELLOW);
+    chThdSleepMilliseconds(300);
+    palClearPad(GPIOC, GPIOC_LED_RED);
+    palClearPad(GPIOC, GPIOC_LED_GREEN);
+    palClearPad(GPIOC, GPIOC_LED_BLUE);
+    palClearPad(GPIOC, GPIOC_LED_YELLOW);
 
     /* Start LED thread */
     chThdCreateStatic(waLED, sizeof(waLED), LOWPRIO, LED_thread, NULL);
